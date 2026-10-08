@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <time.h>
 #include <assert.h>
@@ -28,13 +28,14 @@ double rBeforeHit[RayNum], thetaBeforeHit[RayNum], rAfterHit[RayNum];
 double eps3 = 0., a13 = 0., a22 = 0., a52 = 0., g[4][4], dg_dr[4][4];
 int imax = 100;
 
+using namespace std;
 
 // #include "eqkerr.h"
 #include "eqjohannsen.h"
 #include "rk45.h"
 #include "johannsen.h"
 
-using namespace std;
+//using namespace std;
 
 int main(int argc, char* argv[])
 {
@@ -61,7 +62,7 @@ int main(int argc, char* argv[])
     double rDisk[imax], rDiskNew[imax],  RayCount[imax], unorm, denom2;
     double frac,sign;
     double gamma=2, redshift;
-    int i, j;
+    //int i, j;
     int arr_index = 0;
 
     M = 1.;
@@ -102,7 +103,7 @@ int main(int argc, char* argv[])
     // printf(" isco1=%f, kerr=%f\n", johannsen_isco, kerr_rms(chi));
 
 
-    for (i = 0; i < imax - 1; i++) {
+    for (int i = 0; i < imax - 1; i++) {
         rDisk[i] = pow((double)i/(imax-2),3) * (1000. - johannsen_isco) + johannsen_isco;
         RayCount[i] = 0;
     }
@@ -114,17 +115,16 @@ int main(int argc, char* argv[])
     delta = Emis_delta[0];
     stepDelta = (Emis_delta[1] - Emis_delta[0]) / ((double)RayNum - 1.);
     delta -= stepDelta;
-
     // for (i = 0; i < RayNum; i++) {
-    j = 0; 
-    for (i = 0; delta < Emis_delta[1]; i++, delta += stepDelta) {
+    //int j = 0;
+    for (int j=0; delta < Emis_delta[1]; delta += stepDelta) {
         // printf("%d\n", i);
-
         // delta += stepDelta;
 
         zinit = 0;  //  additional parameter for runge-kutta 
 
         //  Initial values
+        //0=r, 1=th, 2=kr, 3=kth, 4=phi (unused)
         vars[0] = height;
         vars[1] = 1E-8;//asin(0.7747764 / height);
         vars[4] = 0.0;
@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
             zPrev = z;
             z = vars[0]*cos(vars[1]);
 
-            if (z <= disk_height && fabs(z - zPrev) > 1E-8) {
+            if (z <= disk_height && fabs(z - zPrev) > 1E-4) {
                 zcheck = 1;
                 zinit = 1;
                 rcache();
@@ -212,9 +212,9 @@ int main(int argc, char* argv[])
             arr_index++;
             zcheck = 0;     //  additional parameter for runge-kutta
 
-            
             if (rDisk[j] <= rHit && rHit < rDisk[j+1])
             {
+                std::cout << rHit << std::endl;
                 RayCount[j] = sin(delta)*stepDelta/fabs(rHit - rHit_prev);
                 rDiskNew[j] = rHit;
                 j = j+1;
@@ -233,13 +233,20 @@ int main(int argc, char* argv[])
     }  // i mainloop 
 
 
+    //j=0;
+    for(int i=0, j=0; i<imax-1; i++) {
 
-    j=0;
-    for(i=0; i<imax-1; i++) {
-
-
-        while(!(rCylindCoord[j] < rDisk[i] && rDisk[i] < rCylindCoord[j+1])) j++;
-
+      bool nonono = false;
+      j=0;
+        while(!(rCylindCoord[j] < rDisk[i] && rDisk[i] < rCylindCoord[j+1])){
+          j++;
+          if(j>RayNum-1){
+            nonono = true;
+            j--;
+            break;
+          }
+        }
+        if(!nonono){
         assert(rCylindCoord[j] < rDisk[i] && rDisk[i] < rCylindCoord[j+1]);
         
         frac = (rCylindCoord[j+1] - rDisk[i]) / (rCylindCoord[j+1] - rCylindCoord[j]);
@@ -271,15 +278,15 @@ int main(int argc, char* argv[])
         Omega = (-dg_dr[0][3] + sqrt(dg_dr[0][3]*dg_dr[0][3] - dg_dr[0][0]*dg_dr[3][3])) / dg_dr[3][3];                 
         LorentzF = pow(pow(Omega + g[0][3] / g[3][3], 2) * g[3][3] * g[3][3] / (g[0][0]*g[3][3] - g[0][3]*g[0][3]) + 1.0, -0.5);
         redshift = sqrt(g_tt_source / (g[0][0] + 2 * g[0][3] * Omega + g[3][3] * Omega * Omega));
-
-        III[i] = RayCount[i] / (A * LorentzF);
+        }
+        III[i] =nonono?0.0: RayCount[i] / (A * LorentzF);
         // III[i] *= pow(redshift, gamma);
 
 
     }
 
 
-    for (i = 0; i<imax-1; i++) {
+    for (int i = 0; i<imax-1; i++) {
 
         if (isnan(III[i])) III[i] = 0.;
         // fprintf(out, "%f %f %f %e %f %f\n", a, height, rDisk[i], III[i], ED[i], HD[i]);

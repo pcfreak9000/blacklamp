@@ -1,7 +1,10 @@
+#include <cmath>
+
 void equations(double varst[], double diffs[]);
 
 void equations(double varst[], double diffs[])
 {
+    using namespace std;
 	double r, th;
 	double kt, kphi;
 	double kt2, kr2, kth2, kp2, ktp, krth;
