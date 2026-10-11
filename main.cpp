@@ -214,7 +214,6 @@ int main(int argc, char* argv[])
 
             if (rDisk[j] <= rHit && rHit < rDisk[j+1])
             {
-                std::cout << rHit << std::endl;
                 RayCount[j] = sin(delta)*stepDelta/fabs(rHit - rHit_prev);
                 rDiskNew[j] = rHit;
                 j = j+1;
